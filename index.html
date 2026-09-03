@@ -118,6 +118,7 @@
     .candidate.tournament { border-color: var(--blue); box-shadow: inset 0 0 0 1px rgba(84,185,255,.3); }
     .candidate.parent { border-color: var(--yellow); box-shadow: 0 0 0 1px rgba(255,212,92,.22); }
     .candidate.elite::after { content: "ELITE"; position: absolute; right: 4px; top: 4px; background: var(--lime); color: #0b100e; font: 8px var(--mono); padding: 2px 4px; border-radius: 3px; }
+    .retry-badge { position: absolute; right: 5px; top: 5px; padding: 2px 5px; border-radius: 999px; background: var(--orange); color: #17100c; font: 700 9px var(--mono); }
     .cand-id { color: var(--muted); font: 10px var(--mono); }
     .cand-score { display: block; font: 700 16px var(--mono); margin-top: 8px; }
     .mini-genes { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 3px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 1px; }
@@ -376,7 +377,7 @@
               <div class="metric-strip">
                 <div class="metric"><span>Best fitness</span><b id="bestMetric">—</b></div>
                 <div class="metric"><span>Population mean</span><b id="meanMetric">—</b></div>
-                <div class="metric"><span>Rejected</span><b id="rejectMetric">0</b></div>
+                <div class="metric"><span>Rejected attempts</span><b id="rejectMetric">0</b></div>
               </div>
             </div>
             <div class="card">
@@ -392,7 +393,7 @@
               <div class="card-title"><strong>Generation pipeline</strong><span id="pipelineNote">initial generation</span></div>
               <div class="process-track">
                 <div class="process-node active" data-node="0"><b>Generate</b><small>12 genes × 15 candidates</small></div>
-                <div class="process-node" data-node="1"><b>Check</b><small>Δk = k<sub>hot</sub> − k<sub>cold</sub> &lt; 0</small></div>
+                <div class="process-node" data-node="1"><b>Check / replace</b><small>Randomize + retest until Δk &lt; 0</small></div>
                 <div class="process-node" data-node="2"><b>Simulate</b><small>Burnup to k<sub>eff</sub> = 1</small></div>
                 <div class="process-node" data-node="3"><b>Rank</b><small>Single fitness objective</small></div>
                 <div class="process-node" data-node="4"><b>Breed</b><small>Tournament + crossover</small></div>
@@ -486,7 +487,7 @@
     const pins = [66, 42, 18, 1];
     const stages = [
       ['Create the first population', 'Generate 15 random chromosomes inside the permitted gene boundaries.', 'N = 15 candidates'],
-      ['Reject positive feedback', 'Compare kₑff at 560 K and 600 K. The candidate passes only when kₕₒₜ − k꜀ₒₗ𝒹 is negative.', 'Δk < 0 required'],
+      ['Replace, then test again', 'If an initial candidate has positive coolant feedback, discard it, generate a new random chromosome for that slot, and repeat the test until it passes.', 'replace ↻ test until Δk < 0'],
       ['Run the full simulation', 'Accepted candidates undergo the expensive Serpent burnup calculation. This page uses a fast visual surrogate.', '10–30 min in paper'],
       ['Rank by one objective', 'Sort the population by cycle length—either operating days or MWd/kgHM. Copy the best candidate as the elite.', 'E = 1 elite'],
       ['Choose two parents', 'Randomly sample four candidates, then take the two with the highest fitness.', 'P = 4 tournament'],
@@ -503,6 +504,7 @@
     let timer = null;
     let cutPoint = null;
     let mutatedRegions = [];
+    let rejectionAttempts = 0;
 
     const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     const pick = a => a[Math.floor(rand() * a.length)];
@@ -512,7 +514,7 @@
       const typeScore = {UO2: 78, MOX: 82, UZrH: 70, UYH: 66};
       return genes.reduce((s,g,i) => s + typeScore[g.fuel] * [1,.68,.3,.06][i] + g.enrich * 4 + g.ratio * .25, 0) + rand()*18;
     };
-    let candidates = Array.from({length:15}, (_,i) => ({id:i+1, genes:chromosome(), fit:0, safe:null}));
+    let candidates = Array.from({length:15}, (_,i) => ({id:i+1, genes:chromosome(), fit:0, safe:null, safetyTests:0, repairTests:0}));
 
     const $ = s => document.querySelector(s);
     const $$ = s => [...document.querySelectorAll(s)];
@@ -524,12 +526,12 @@
       const ranked = [...candidates].sort((a,b) => (b.fit||0)-(a.fit||0));
       const parents = currentStep >= 4 && currentStep <= 6 ? ranked.slice(0,2).map(x=>x.id-1) : [];
       const elite = currentStep >= 3 ? ranked[0]?.id-1 : -1;
-      $('#population').innerHTML = candidates.map((c,i) => `<button class="candidate ${i===selected?'selected':''} ${tournament.includes(i)?'tournament':''} ${parents.includes(i)?'parent':''} ${i===elite?'elite':''}" data-candidate="${i}" aria-label="Select candidate ${i+1}"><span class="cand-id">C${String(i+1).padStart(2,'0')}</span><b class="cand-score">${scoreLabel(c)}</b><span class="mini-genes">${c.genes.flatMap(g=>[g,g,g]).map(g=>`<i style="background:${colorFor(g)}"></i>`).join('')}</span></button>`).join('');
+      $('#population').innerHTML = candidates.map((c,i) => `<button class="candidate ${i===selected?'selected':''} ${tournament.includes(i)?'tournament':''} ${parents.includes(i)?'parent':''} ${i===elite?'elite':''}" data-candidate="${i}" aria-label="Select candidate ${i+1}"><span class="cand-id">C${String(i+1).padStart(2,'0')}</span>${currentStep===1&&c.safetyTests>1?`<span class="retry-badge" title="${c.safetyTests-1} random replacement${c.safetyTests-1===1?'':'s'}">↻ ${c.safetyTests}</span>`:''}<b class="cand-score">${scoreLabel(c)}</b><span class="mini-genes">${c.genes.flatMap(g=>[g,g,g]).map(g=>`<i style="background:${colorFor(g)}"></i>`).join('')}</span></button>`).join('');
       $$('[data-candidate]').forEach(el => el.onclick = () => { selected = +el.dataset.candidate; render(); });
       const vals = candidates.filter(c=>c.fit).map(c=>c.fit + generation*6);
       $('#bestMetric').textContent = vals.length ? Math.round(Math.max(...vals)) : '—';
       $('#meanMetric').textContent = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : '—';
-      $('#rejectMetric').textContent = candidates.filter(c=>c.safe===false).length;
+      $('#rejectMetric').textContent = rejectionAttempts;
     }
 
     function renderInspector() {
@@ -542,14 +544,32 @@
       $('#cutPoint').textContent = cutPoint ? `${cutPoint} / 12` : '—';
       const status = $('#safetyStatus');
       if (c.safe === null) { status.textContent = 'awaiting test'; status.className = 'safety-status'; $('#safetyBar').style.width='20%'; }
-      else if (c.safe) { status.textContent = 'PASS · Δk < 0'; status.className = 'safety-status'; $('#safetyBar').style.width='68%'; $('#safetyBar').style.background='var(--lime)'; }
+      else if (c.safe) {
+        const attempts = currentStep===1 ? c.safetyTests : c.repairTests;
+        status.textContent = attempts > 1 ? `PASS · ${attempts} tests` : 'PASS · Δk < 0';
+        status.className = 'safety-status'; $('#safetyBar').style.width='68%'; $('#safetyBar').style.background='var(--lime)';
+      }
       else { status.textContent = 'REJECT · Δk > 0'; status.className = 'safety-status fail'; $('#safetyBar').style.width='88%'; $('#safetyBar').style.background='var(--danger)'; }
     }
 
     function updateStateForStep(step) {
       mutatedRegions = [];
-      if (step === 0 && generation === 0) candidates.forEach(c => { c.fit=0; c.safe=null; });
-      if (step === 1) candidates.forEach((c,i) => c.safe = ((i + generation*3) % 11 !== 3));
+      if (step === 0 && generation === 0) {
+        rejectionAttempts = 0;
+        candidates.forEach(c => { c.fit=0; c.safe=null; c.safetyTests=0; c.repairTests=0; });
+      }
+      if (step === 1) candidates.forEach(c => {
+        c.safe = false;
+        c.safetyTests = 0;
+        while (!c.safe) {
+          c.safetyTests++;
+          c.safe = rand() > 0.22;
+          if (!c.safe) {
+            rejectionAttempts++;
+            c.genes = chromosome();
+          }
+        }
+      });
       if (step === 2) candidates.forEach(c => { if(c.safe) c.fit = fitness(c.genes); });
       if (step === 3) candidates.sort((a,b)=>(b.fit||0)-(a.fit||0)).forEach((c,i)=>c.id=i+1);
       if (step === 4) selected = 0;
@@ -570,9 +590,29 @@
           if(rand()<.34){ g.ratio=clamp(g.ratio+(rand()-.5)*16,10,50); hit=true; }
           if(hit) mutatedRegions.push(i);
         });
+        c.safe = false;
+        c.repairTests = 0;
       }
       if (step === 7) {
-        candidates.forEach(c=>{ if(c.safe===false){ c.genes=chromosome(); c.safe=true; c.fit=fitness(c.genes); } });
+        candidates.forEach(c=>{
+          if(c.safe===false){
+            while(!c.safe){
+              c.repairTests++;
+              c.safe = rand() > 0.45;
+              if(!c.safe){
+                rejectionAttempts++;
+                c.genes.forEach((g,i)=>{
+                  let hit=false;
+                  if(rand()<.225){ g.fuel=pick(fuelNames); hit=true; }
+                  if(rand()<.225){ g.enrich=clamp(g.enrich+(rand()-.5)*5,3,10); hit=true; }
+                  if(rand()<.225){ g.ratio=clamp(g.ratio+(rand()-.5)*24,10,50); hit=true; }
+                  if(hit && c===candidates[selected] && !mutatedRegions.includes(i)) mutatedRegions.push(i);
+                });
+              }
+            }
+            c.fit=fitness(c.genes);
+          }
+        });
       }
     }
 
@@ -587,7 +627,7 @@
         stageRail.scrollTo({ left: activeStage.offsetLeft - (stageRail.clientWidth - activeStage.clientWidth) / 2, behavior: 'smooth' });
       }
       $$('.process-node').forEach((el,i)=>el.classList.toggle('active', i===Math.min(currentStep,5)));
-      const statuses=['randomized','testing feedback','parallel simulation','sorted high → low','4 sampled · 2 win','one-point exchange','genes changing','repaired population'];
+      const statuses=['randomized','all slots passed after replacement loop','parallel simulation','sorted high → low','4 sampled · 2 win','one-point exchange','genes changing','mutated + retested until safe'];
       $('#populationStatus').textContent=statuses[currentStep];
       $('#pipelineNote').textContent = generation===0 ? 'initial generation' : `generation ${generation}`;
       $('#mutationValue').textContent = currentStep===7 ? '22.5% repair' : '15%';
@@ -604,7 +644,7 @@
     function tick(){ if(!playing)return; advance(); timer=setTimeout(tick, 1850-Number($('#speed').value)); }
     $('#playBtn').onclick=()=>{ if(playing){pause();return;} playing=true; $('#playBtn').textContent='Ⅱ Pause'; $('#liveDot').classList.add('active'); tick(); };
     $('#stepBtn').onclick=()=>{ pause(); advance(); };
-    $('#resetBtn').onclick=()=>{ pause(); seed=73421; currentStep=0; generation=0; selected=0; cutPoint=null; candidates=Array.from({length:15},(_,i)=>({id:i+1,genes:chromosome(),fit:0,safe:null})); render(); };
+    $('#resetBtn').onclick=()=>{ pause(); seed=73421; currentStep=0; generation=0; selected=0; cutPoint=null; rejectionAttempts=0; candidates=Array.from({length:15},(_,i)=>({id:i+1,genes:chromosome(),fit:0,safe:null,safetyTests:0,repairTests:0})); render(); };
     $$('.stage').forEach(el=>el.onclick=()=>{ pause(); currentStep=+el.dataset.step; updateStateForStep(currentStep); render(); });
     render();
   </script>
