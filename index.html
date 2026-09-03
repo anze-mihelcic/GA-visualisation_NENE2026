@@ -52,11 +52,7 @@
       border-bottom: 1px solid var(--line);
     }
     .brand { display: flex; align-items: center; gap: 13px; }
-    .mark { width: 38px; height: 38px; position: relative; display: grid; place-items: center; }
-    .mark::before, .mark::after { content: ""; position: absolute; border: 2px solid var(--lime); border-radius: 50%; }
-    .mark::before { width: 32px; height: 12px; transform: rotate(30deg); }
-    .mark::after { width: 32px; height: 12px; transform: rotate(-30deg); }
-    .mark span { width: 7px; height: 7px; background: var(--lime); border-radius: 50%; box-shadow: 0 0 16px var(--lime); }
+    .brand-logo { width: 52px; height: 46px; object-fit: contain; display: block; }
     .brand strong { display: block; letter-spacing: .06em; font-size: 15px; }
     .brand small { display: block; color: var(--muted); font-size: 12px; }
     nav { display: flex; align-items: center; gap: 6px; }
@@ -107,6 +103,10 @@
     .stage-head h2 { font-size: clamp(25px, 2.4vw, 36px); margin: 0 0 5px; letter-spacing: -.035em; }
     .stage-head p { margin: 0; color: var(--muted); max-width: 660px; }
     .phase-tag { white-space: nowrap; border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; color: var(--lime); font: 12px var(--mono); background: #0d1411; }
+    .stage-tools { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    .operator-jump { border: 1px solid #466052; background: #16221c; border-radius: 999px; padding: 7px 10px; color: var(--ink); font: 11px var(--mono); cursor: pointer; }
+    .operator-jump:hover, .operator-jump:focus-visible { border-color: var(--lime); color: var(--lime); outline: none; }
+    .operator-jump.active { background: var(--lime); border-color: var(--lime); color: #0b100e; }
     .viz-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .8fr); gap: 18px; }
     .card { border: 1px solid var(--line); border-radius: 16px; background: #0e1512; padding: 16px; min-width: 0; }
     .card-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 13px; }
@@ -141,6 +141,35 @@
     .region-key b { color: var(--ink); font-family: var(--mono); }
     .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
     .process-card { grid-column: 1 / -1; position: relative; overflow: hidden; }
+    .operator-lab { grid-column: 1 / -1; border: 2px solid var(--lime); background: linear-gradient(145deg, #0c1410, #121d18); overflow: hidden; scroll-margin-top: 190px; box-shadow: 0 0 0 4px rgba(199,255,89,.05), 0 18px 42px rgba(0,0,0,.25); }
+    .lab-intro { display: flex; justify-content: space-between; gap: 18px; align-items: end; margin-bottom: 15px; }
+    .lab-intro p { margin: 0; color: var(--muted); font-size: 13px; }
+    .lab-legend { display: flex; gap: 12px; flex-wrap: wrap; font: 11px var(--mono); color: var(--muted); }
+    .lab-legend i { width: 9px; height: 9px; display: inline-block; border-radius: 2px; margin-right: 5px; }
+    .ribbon-scroll { overflow-x: auto; padding: 3px 0 9px; scrollbar-color: #455a50 transparent; }
+    .chromosome-lane { display: grid; grid-template-columns: 84px minmax(720px, 1fr); gap: 10px; align-items: center; min-width: 824px; margin-bottom: 9px; }
+    .lane-label { color: var(--muted); font: 11px var(--mono); text-align: right; }
+    .lane-label b { color: var(--ink); display: block; font-size: 12px; }
+    .ribbon-frame { position: relative; }
+    .gene-ribbon { display: grid; grid-template-columns: repeat(12, minmax(50px, 1fr)); gap: 3px; }
+    .viz-gene { min-width: 0; height: 54px; padding: 7px 5px; border: 1px solid #304038; border-top: 3px solid #52675d; border-radius: 7px; background: #16211c; text-align: center; animation: gene-arrive .42s both; animation-delay: calc(var(--i) * 22ms); }
+    .viz-gene:nth-child(3n+1) { margin-left: 4px; }
+    .viz-gene:first-child { margin-left: 0; }
+    .viz-gene small { display: block; color: #71857a; font: 8px var(--mono); text-transform: uppercase; }
+    .viz-gene b { display: block; margin-top: 4px; font: 10px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .viz-gene.source-a { border-top-color: var(--lime); }
+    .viz-gene.source-b { border-top-color: var(--blue); animation-name: tail-swap; }
+    .viz-gene.mutation { border-color: var(--orange); border-top-color: var(--orange); background: rgba(255,142,89,.13); box-shadow: 0 0 18px rgba(255,142,89,.14); animation: mutation-pop .7s both; animation-delay: calc(var(--i) * 40ms); }
+    .cut-marker { position: absolute; z-index: 3; top: -24px; bottom: -6px; width: 2px; background: var(--yellow); left: var(--cut); box-shadow: 0 0 10px rgba(255,212,92,.55); }
+    .cut-marker::before { content: "CUT " attr(data-cut); position: absolute; top: -1px; left: 6px; color: var(--yellow); white-space: nowrap; font: 9px var(--mono); }
+    .operator-arrow { margin: 2px 0 8px 94px; color: var(--yellow); font: 11px var(--mono); letter-spacing: .04em; }
+    .mutation-changes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 13px; }
+    .mutation-change { padding: 9px 10px; border: 1px solid #4d3a30; border-radius: 9px; background: rgba(255,142,89,.06); font: 10px var(--mono); }
+    .mutation-change span { display: block; color: var(--muted); margin-bottom: 4px; }
+    .mutation-change b { color: var(--orange); font-weight: 650; }
+    @keyframes gene-arrive { from { opacity: 0; transform: translateY(-6px); } }
+    @keyframes tail-swap { from { opacity: 0; transform: translateY(-18px); } }
+    @keyframes mutation-pop { 0% { transform: scale(.78); background: var(--orange); color: #130d09; } 65% { transform: scale(1.07); } 100% { transform: scale(1); } }
     .process-track { display: grid; grid-template-columns: repeat(6, minmax(100px, 1fr)); gap: 9px; }
     .process-node { position: relative; border: 1px solid var(--line); border-radius: 12px; padding: 11px; min-height: 77px; background: #131c18; color: var(--muted); transition: .25s ease; }
     .process-node:not(:last-child)::after { content: "›"; position: absolute; right: -9px; top: 25px; z-index: 2; color: #668074; font-size: 20px; }
@@ -246,8 +275,12 @@
       .stage-head h2 { font-size: 26px; }
       .stage-head p { font-size: 14px; line-height: 1.45; }
       .phase-tag { display: inline-block; margin-top: 12px; }
+      .stage-tools { justify-content: flex-start; margin-top: 12px; }
+      .phase-tag { margin-top: 0; }
+      .operator-jump { min-height: 42px; padding-inline: 12px; }
       .viz-grid { grid-template-columns: 1fr; }
       .process-card { grid-column: auto; }
+      .operator-lab { grid-column: auto; }
       .process-track { grid-template-columns: repeat(2, 1fr); }
       .process-node:nth-child(2n)::after { display: none; }
       .population { grid-template-columns: repeat(3, 1fr); }
@@ -266,9 +299,19 @@
       .shell { padding-inline: 10px; padding-bottom: 28px; }
       header { min-height: 66px; }
       .brand small { display: none; }
+      .brand-logo { width: 44px; height: 40px; }
       .paper-link { padding: 8px 10px; }
       .eyebrow { font-size: 11px; }
-      .main-stage { padding: 16px 10px; }
+      .intro { padding: 18px 2px 18px; }
+      h1 { font-size: clamp(33px, 10.5vw, 42px); line-height: 1; }
+      .workbench { margin-inline: -10px; border-left: 0; border-right: 0; border-radius: 0; overflow: visible; }
+      .toolbar { position: sticky; top: 0; z-index: 30; padding-top: max(11px, env(safe-area-inset-top)); background: rgba(16,24,21,.96); backdrop-filter: blur(14px); }
+      .stages { position: sticky; top: calc(112px + env(safe-area-inset-top)); z-index: 25; background: rgba(15,23,19,.97); backdrop-filter: blur(12px); }
+      .stage-name { font-size: 14px; }
+      .main-stage { padding: 14px 8px; }
+      .stage-head { margin-bottom: 14px; padding-inline: 3px; }
+      .stage-head h2 { font-size: 24px; }
+      .viz-grid { gap: 10px; }
       .card { padding: 12px; border-radius: 14px; }
       .card-title { align-items: start; }
       .metric-strip { gap: 5px; }
@@ -280,6 +323,19 @@
       .process-node { min-height: 68px; padding: 12px 14px; }
       .process-node:nth-child(n)::after { display: block; content: "↓"; right: auto; left: 50%; top: auto; bottom: -18px; transform: translateX(-50%); }
       .process-node:last-child::after { display: none; }
+      .lab-intro { display: block; }
+      .lab-legend { margin-top: 10px; }
+      .ribbon-scroll { overflow: visible; padding-bottom: 2px; }
+      .chromosome-lane { display: block; min-width: 0; margin-bottom: 14px; }
+      .lane-label { display: flex; align-items: baseline; gap: 8px; text-align: left; margin-bottom: 7px; }
+      .gene-ribbon { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+      .viz-gene { height: 48px; padding: 5px 3px; }
+      .viz-gene:nth-child(3n+1) { margin-left: 0; border-left-width: 3px; }
+      .viz-gene small { font-size: 8px; }
+      .viz-gene b { font-size: 10px; }
+      .cut-marker { display: none; }
+      .operator-arrow { margin: -2px 0 12px; padding: 7px 9px; border: 1px dashed #66592d; border-radius: 8px; text-align: center; }
+      .mutation-changes { grid-template-columns: 1fr; }
       .inspector { padding: 20px 14px; }
       .chromosome { grid-template-columns: 1fr; }
       .gene label { font-size: 10px; }
@@ -296,7 +352,7 @@
     }
     @media (max-width: 360px) {
       .shell { padding-inline: 6px; }
-      .workbench { border-radius: 14px; }
+      .workbench { margin-inline: -6px; border-radius: 0; }
       nav .paper-link { font-size: 0; }
       nav .paper-link::after { content: "Paper ↘"; font-size: 12px; }
       .population { gap: 5px; }
@@ -313,7 +369,7 @@
   <div class="shell">
     <header>
       <div class="brand">
-        <div class="mark" aria-hidden="true"><span></span></div>
+        <img class="brand-logo" src="darwin-logo.png" alt="DARWIN logo">
         <div><strong>DARWIN / GA</strong><small>interactive paper companion</small></div>
       </div>
       <nav aria-label="Page navigation">
@@ -368,9 +424,13 @@
         <section class="main-stage" aria-live="polite">
           <div class="stage-head">
             <div><h2 id="stageTitle">Create the first population</h2><p id="stageDescription">Generate 15 random chromosomes inside the permitted gene boundaries.</p></div>
-            <span class="phase-tag" id="phaseTag">N = 15 candidates</span>
+            <div class="stage-tools"><span class="phase-tag" id="phaseTag">N = 15 candidates</span><button class="operator-jump" type="button" data-operator-step="5">View crossover</button><button class="operator-jump" type="button" data-operator-step="6">View mutation</button></div>
           </div>
           <div class="viz-grid">
+            <div class="card operator-lab" id="operatorLab" hidden>
+              <div class="card-title"><strong>Operator microscope</strong><span id="operatorMode">chromosome-level view</span></div>
+              <div id="operatorViz"></div>
+            </div>
             <div class="card">
               <div class="card-title"><strong>Candidate population</strong><span id="populationStatus">randomized</span></div>
               <div class="population" id="population"></div>
@@ -492,7 +552,7 @@
       ['Rank by one objective', 'Sort the population by cycle length—either operating days or MWd/kgHM. Copy the best candidate as the elite.', 'E = 1 elite'],
       ['Choose two parents', 'Randomly sample four candidates, then take the two with the highest fitness.', 'P = 4 tournament'],
       ['Exchange chromosome tails', 'With probability 0.8, make a one-point cut and swap the parent tails to form two children.', 'p꜀ = 0.80'],
-      ['Mutate every child', 'Each non-elite gene mutates independently with probability 0.15. Real values use bounded polynomial mutation.', 'pₘ = 0.15 · ηₘ = 3'],
+      ['Mutate both children', 'Both children from the parent pair are mutated independently. Every non-elite gene has probability 0.15 of mutation; real values use bounded polynomial mutation.', '2 children · pₘ = 0.15 · ηₘ = 3'],
       ['Retest, repair, repeat', 'Unsafe children are mutated again with pₘ × 1.5 and ηₘ ÷ 2, then retested until acceptable.', 'repeat to M = 60']
     ];
 
@@ -505,6 +565,8 @@
     let cutPoint = null;
     let mutatedRegions = [];
     let rejectionAttempts = 0;
+    let crossoverVisual = null;
+    let mutationEvents = [];
 
     const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     const pick = a => a[Math.floor(rand() * a.length)];
@@ -520,6 +582,26 @@
     const $$ = s => [...document.querySelectorAll(s)];
     const colorFor = g => fuels[g.fuel].color;
     const scoreLabel = c => c.fit ? Math.round(c.fit + generation*6) : '—';
+    const flattenForViz = genes => genes.flatMap((g,i) => [
+      { key:`R${i+1} F`, value:fuels[g.fuel].label, color:colorFor(g) },
+      { key:`R${i+1} E`, value:`${g.enrich.toFixed(2)}%`, color:colorFor(g) },
+      { key:`R${i+1} U`, value:g.fuel==='UO2'?'N/A':`${g.ratio.toFixed(1)}%`, color:colorFor(g) }
+    ]);
+    const ribbon = (genes, sourceFn=()=>'', mutated=new Set()) => `<div class="gene-ribbon">${genes.map((g,i)=>`<div class="viz-gene ${sourceFn(i)} ${mutated.has(i)?'mutation':''}" style="--i:${i};${g.color?`--gene-color:${g.color}`:''}"><small>${g.key}</small><b style="color:${g.color||'inherit'}">${g.value}</b></div>`).join('')}</div>`;
+
+    function renderOperatorLab() {
+      const lab = $('#operatorLab');
+      if (currentStep !== 5 && currentStep !== 6) { lab.hidden = true; return; }
+      lab.hidden = false;
+      if (currentStep === 5 && crossoverVisual) {
+        const v = crossoverVisual;
+        $('#operatorMode').textContent = 'one-point crossover';
+        $('#operatorViz').innerHTML = `<div class="lab-intro"><p>One parent pair makes two reciprocal children. Both chromosomes are cut at gene ${v.cut}, then their tails are exchanged.</p><div class="lab-legend"><span><i style="background:var(--lime)"></i>from Parent A</span><span><i style="background:var(--blue)"></i>from Parent B</span></div></div><div class="ribbon-scroll"><div class="chromosome-lane"><div class="lane-label"><b>Parent A</b>C01</div><div class="ribbon-frame">${ribbon(v.a, ()=>'source-a')}<i class="cut-marker" data-cut="${v.cut}" style="--cut:${v.cut/12*100}%"></i></div></div><div class="chromosome-lane"><div class="lane-label"><b>Parent B</b>C02</div><div class="ribbon-frame">${ribbon(v.b, ()=>'source-b')}<i class="cut-marker" data-cut="${v.cut}" style="--cut:${v.cut/12*100}%"></i></div></div><div class="operator-arrow">↓ exchange both tails → two children</div><div class="chromosome-lane"><div class="lane-label"><b>Child 1</b>C03 · A + B</div><div class="ribbon-frame">${ribbon(v.child1, i=>i<v.cut?'source-a':'source-b')}<i class="cut-marker" data-cut="${v.cut}" style="--cut:${v.cut/12*100}%"></i></div></div><div class="chromosome-lane"><div class="lane-label"><b>Child 2</b>C04 · B + A</div><div class="ribbon-frame">${ribbon(v.child2, i=>i<v.cut?'source-b':'source-a')}<i class="cut-marker" data-cut="${v.cut}" style="--cut:${v.cut/12*100}%"></i></div></div></div>`;
+      } else {
+        $('#operatorMode').textContent = 'per-gene mutation';
+        $('#operatorViz').innerHTML = `<div class="lab-intro"><p>Child 1 and Child 2 are mutated independently. Each gene rolls separately against pₘ = 0.15.</p><div class="lab-legend"><span><i style="background:var(--orange)"></i>mutated gene</span><span><i style="background:#52675d"></i>unchanged gene</span></div></div>${mutationEvents.map(child=>`<div class="ribbon-scroll"><div class="chromosome-lane"><div class="lane-label"><b>${child.label}</b>C${String(child.candidateIndex+1).padStart(2,'0')}</div><div class="ribbon-frame">${ribbon(child.after, ()=>'', new Set(child.events.map(e=>e.index)))}</div></div></div><div class="mutation-changes">${child.events.map(e=>`<div class="mutation-change"><span>${child.label} · ${e.key}</span>${e.before} → <b>${e.after}</b></div>`).join('')}</div>`).join('')}`;
+      }
+    }
 
     function renderPopulation() {
       const tournament = currentStep === 4 ? [1,4,8,12] : [];
@@ -575,23 +657,41 @@
       if (step === 4) selected = 0;
       if (step === 5) {
         cutPoint = 1 + Math.floor(rand()*11);
-        const a = candidates[0].genes.flatMap(g=>[g.fuel,g.enrich,g.ratio]);
-        const b = candidates[1].genes.flatMap(g=>[g.fuel,g.enrich,g.ratio]);
-        const child = a.slice(0,cutPoint).concat(b.slice(cutPoint));
-        candidates[2].genes = Array.from({length:4}, (_,i)=>({fuel:child[i*3],enrich:child[i*3+1],ratio:child[i*3+2]}));
+        const parentA = candidates[0].genes.map(g=>({...g}));
+        const parentB = candidates[1].genes.map(g=>({...g}));
+        const a = parentA.flatMap(g=>[g.fuel,g.enrich,g.ratio]);
+        const b = parentB.flatMap(g=>[g.fuel,g.enrich,g.ratio]);
+        const child1 = a.slice(0,cutPoint).concat(b.slice(cutPoint));
+        const child2 = b.slice(0,cutPoint).concat(a.slice(cutPoint));
+        candidates[2].genes = Array.from({length:4}, (_,i)=>({fuel:child1[i*3],enrich:child1[i*3+1],ratio:child1[i*3+2]}));
+        candidates[3].genes = Array.from({length:4}, (_,i)=>({fuel:child2[i*3],enrich:child2[i*3+1],ratio:child2[i*3+2]}));
+        crossoverVisual = { a:flattenForViz(parentA), b:flattenForViz(parentB), child1:flattenForViz(candidates[2].genes), child2:flattenForViz(candidates[3].genes), cut:cutPoint };
         selected = 2;
       }
       if (step === 6) {
-        const c = candidates[selected];
-        c.genes.forEach((g,i)=>{
-          let hit=false;
-          if(rand()<.34){ g.fuel=pick(fuelNames); hit=true; }
-          if(rand()<.34){ g.enrich=clamp(g.enrich+(rand()-.5)*3,3,10); hit=true; }
-          if(rand()<.34){ g.ratio=clamp(g.ratio+(rand()-.5)*16,10,50); hit=true; }
-          if(hit) mutatedRegions.push(i);
+        mutationEvents = [];
+        [2,3].forEach((candidateIndex, childNumber)=>{
+          const c = candidates[candidateIndex];
+          const before = flattenForViz(c.genes);
+          c.genes.forEach((g,i)=>{
+            let hit=false;
+            if(rand()<.15){ g.fuel=pick(fuelNames.filter(name=>name!==g.fuel)); hit=true; }
+            if(rand()<.15){ g.enrich=clamp(g.enrich+(rand()-.5)*3,3,10); hit=true; }
+            if(rand()<.15){ g.ratio=clamp(g.ratio+(rand()-.5)*16,10,50); hit=true; }
+            if(hit && candidateIndex===selected && !mutatedRegions.includes(i)) mutatedRegions.push(i);
+          });
+          let after = flattenForViz(c.genes);
+          let events = after.map((g,i)=>g.value!==before[i].value?{index:i,key:g.key,before:before[i].value,after:g.value}:null).filter(Boolean);
+          if(!events.length){
+            c.genes[0].enrich=clamp(c.genes[0].enrich+1.25,3,10);
+            after=flattenForViz(c.genes);
+            events=[{index:1,key:after[1].key,before:before[1].value,after:after[1].value}];
+            if(candidateIndex===selected && !mutatedRegions.includes(0)) mutatedRegions.push(0);
+          }
+          mutationEvents.push({candidateIndex,label:`Child ${childNumber+1}`,before,after,events});
+          c.safe = false;
+          c.repairTests = 0;
         });
-        c.safe = false;
-        c.repairTests = 0;
       }
       if (step === 7) {
         candidates.forEach(c=>{
@@ -626,13 +726,15 @@
         const stageRail = $('.stages');
         stageRail.scrollTo({ left: activeStage.offsetLeft - (stageRail.clientWidth - activeStage.clientWidth) / 2, behavior: 'smooth' });
       }
-      $$('.process-node').forEach((el,i)=>el.classList.toggle('active', i===Math.min(currentStep,5)));
-      const statuses=['randomized','all slots passed after replacement loop','parallel simulation','sorted high → low','4 sampled · 2 win','one-point exchange','genes changing','mutated + retested until safe'];
+      const pipelineStage = [0,1,2,3,4,4,5,5][currentStep];
+      $$('.process-node').forEach((el,i)=>el.classList.toggle('active', i===pipelineStage));
+      $$('[data-operator-step]').forEach(el=>el.classList.toggle('active', +el.dataset.operatorStep===currentStep));
+      const statuses=['randomized','all slots passed after replacement loop','parallel simulation','sorted high → low','4 sampled · 2 win','one pair → two children','both children mutating independently','mutated + retested until safe'];
       $('#populationStatus').textContent=statuses[currentStep];
       $('#pipelineNote').textContent = generation===0 ? 'initial generation' : `generation ${generation}`;
       $('#mutationValue').textContent = currentStep===7 ? '22.5% repair' : '15%';
       $('#etaValue').textContent = currentStep===7 ? '1.5 repair' : '3';
-      renderPopulation(); renderInspector();
+      renderPopulation(); renderInspector(); renderOperatorLab();
     }
 
     function advance() {
@@ -644,8 +746,16 @@
     function tick(){ if(!playing)return; advance(); timer=setTimeout(tick, 1850-Number($('#speed').value)); }
     $('#playBtn').onclick=()=>{ if(playing){pause();return;} playing=true; $('#playBtn').textContent='Ⅱ Pause'; $('#liveDot').classList.add('active'); tick(); };
     $('#stepBtn').onclick=()=>{ pause(); advance(); };
-    $('#resetBtn').onclick=()=>{ pause(); seed=73421; currentStep=0; generation=0; selected=0; cutPoint=null; rejectionAttempts=0; candidates=Array.from({length:15},(_,i)=>({id:i+1,genes:chromosome(),fit:0,safe:null,safetyTests:0,repairTests:0})); render(); };
-    $$('.stage').forEach(el=>el.onclick=()=>{ pause(); currentStep=+el.dataset.step; updateStateForStep(currentStep); render(); });
+    $('#resetBtn').onclick=()=>{ pause(); seed=73421; currentStep=0; generation=0; selected=0; cutPoint=null; crossoverVisual=null; mutationEvents=[]; rejectionAttempts=0; candidates=Array.from({length:15},(_,i)=>({id:i+1,genes:chromosome(),fit:0,safe:null,safetyTests:0,repairTests:0})); render(); };
+    function showOperator(step) {
+      pause(); currentStep=step; updateStateForStep(currentStep); render();
+      requestAnimationFrame(()=>$('#operatorLab').scrollIntoView({behavior:'smooth',block:'start'}));
+    }
+    $$('[data-operator-step]').forEach(el=>el.onclick=()=>showOperator(+el.dataset.operatorStep));
+    $$('.stage').forEach(el=>el.onclick=()=>{
+      pause(); currentStep=+el.dataset.step; updateStateForStep(currentStep); render();
+      if(currentStep===5 || currentStep===6) requestAnimationFrame(()=>$('#operatorLab').scrollIntoView({behavior:'smooth',block:'start'}));
+    });
     render();
   </script>
 </body>
