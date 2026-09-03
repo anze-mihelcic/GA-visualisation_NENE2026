@@ -241,6 +241,7 @@
 
     footer { margin-top: 70px; padding: 26px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 24px; color: var(--muted); font-size: 12px; }
     footer strong { color: var(--ink); }
+    .mobile-summary, .mobile-detail-controls, .mobile-page-toggle { display: none; }
 
     @media (max-width: 1080px) {
       .workspace { grid-template-columns: 190px 1fr; }
@@ -274,6 +275,18 @@
       .stage-head { display: block; }
       .stage-head h2 { font-size: 26px; }
       .stage-head p { font-size: 14px; line-height: 1.45; }
+      .mobile-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 0 0 12px; }
+      .mobile-summary div { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: #101815; }
+      .mobile-summary span { display: block; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+      .mobile-summary b { display: block; margin-top: 3px; font: 12px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .mobile-detail-controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 12px; }
+      .mobile-expand, .mobile-page-toggle { min-height: 44px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: #16211c; color: var(--ink); font: 12px var(--mono); text-align: left; cursor: pointer; }
+      .mobile-expand .toggle-mark, .mobile-page-toggle .toggle-mark { float: right; color: var(--lime); }
+      .mobile-expand[aria-expanded="true"], .mobile-page-toggle[aria-expanded="true"] { border-color: var(--lime-dim); background: rgba(199,255,89,.08); }
+      .mobile-expand[aria-expanded="true"] .toggle-mark::before, .mobile-page-toggle[aria-expanded="true"] .toggle-mark::before { content: "−"; }
+      .mobile-expand[aria-expanded="false"] .toggle-mark::before, .mobile-page-toggle[aria-expanded="false"] .toggle-mark::before { content: "+"; }
+      .mobile-detail:not(.mobile-open), .mobile-secondary:not(.mobile-open) { display: none !important; }
+      .mobile-page-toggle { width: 100%; margin: 22px 0 8px; }
       .phase-tag { display: inline-block; margin-top: 12px; }
       .stage-tools { justify-content: flex-start; margin-top: 12px; }
       .phase-tag { margin-top: 0; }
@@ -304,9 +317,10 @@
       .eyebrow { font-size: 11px; }
       .intro { padding: 18px 2px 18px; }
       h1 { font-size: clamp(33px, 10.5vw, 42px); line-height: 1; }
+      .lede { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
       .workbench { margin-inline: -10px; border-left: 0; border-right: 0; border-radius: 0; overflow: visible; }
       .toolbar { position: sticky; top: 0; z-index: 30; padding-top: max(11px, env(safe-area-inset-top)); background: rgba(16,24,21,.96); backdrop-filter: blur(14px); }
-      .stages { position: sticky; top: calc(112px + env(safe-area-inset-top)); z-index: 25; background: rgba(15,23,19,.97); backdrop-filter: blur(12px); }
+      .stages { position: static; background: #0f1713; }
       .stage-name { font-size: 14px; }
       .main-stage { padding: 14px 8px; }
       .stage-head { margin-bottom: 14px; padding-inline: 3px; }
@@ -426,12 +440,24 @@
             <div><h2 id="stageTitle">Create the first population</h2><p id="stageDescription">Generate 15 random chromosomes inside the permitted gene boundaries.</p></div>
             <div class="stage-tools"><span class="phase-tag" id="phaseTag">N = 15 candidates</span><button class="operator-jump" type="button" data-operator-step="5">View crossover</button><button class="operator-jump" type="button" data-operator-step="6">View mutation</button></div>
           </div>
+          <div class="mobile-summary" aria-label="Current step summary">
+            <div><span>Status</span><b id="mobileSummaryStatus">randomized</b></div>
+            <div><span>Selected</span><b id="mobileSummaryCandidate">C01</b></div>
+            <div><span>Best fitness</span><b id="mobileSummaryFitness">—</b></div>
+            <div><span>Safety</span><b id="mobileSummarySafety">awaiting test</b></div>
+          </div>
+          <div class="mobile-detail-controls" aria-label="Optional visualization details">
+            <button class="mobile-expand" type="button" data-mobile-target="populationPanel" aria-controls="populationPanel" aria-expanded="false">Population <span class="toggle-mark" aria-hidden="true"></span></button>
+            <button class="mobile-expand" type="button" data-mobile-target="corePanel" aria-controls="corePanel" aria-expanded="false">Fuel regions <span class="toggle-mark" aria-hidden="true"></span></button>
+            <button class="mobile-expand" type="button" data-mobile-target="pipelinePanel" aria-controls="pipelinePanel" aria-expanded="false">Pipeline <span class="toggle-mark" aria-hidden="true"></span></button>
+            <button class="mobile-expand" type="button" data-mobile-target="inspectorPanel" aria-controls="inspectorPanel" aria-expanded="false">Chromosome <span class="toggle-mark" aria-hidden="true"></span></button>
+          </div>
           <div class="viz-grid">
             <div class="card operator-lab" id="operatorLab" hidden>
               <div class="card-title"><strong>Operator microscope</strong><span id="operatorMode">chromosome-level view</span></div>
               <div id="operatorViz"></div>
             </div>
-            <div class="card">
+            <div class="card mobile-detail" id="populationPanel">
               <div class="card-title"><strong>Candidate population</strong><span id="populationStatus">randomized</span></div>
               <div class="population" id="population"></div>
               <div class="metric-strip">
@@ -440,7 +466,7 @@
                 <div class="metric"><span>Rejected attempts</span><b id="rejectMetric">0</b></div>
               </div>
             </div>
-            <div class="card">
+            <div class="card mobile-detail" id="corePanel">
               <div class="card-title"><strong>Four fuel regions</strong><span>169 pins total</span></div>
               <div class="assembly-wrap">
                 <div class="assembly" id="assembly" style="--region1:#54b9ff;--region2:#e878ef;--region3:#ffd45c;--region4:#ff8e59" aria-label="Hexagonal fuel assembly diagram with four concentric fuel regions">
@@ -449,7 +475,7 @@
               </div>
               <div class="region-key" id="regionKey"></div>
             </div>
-            <div class="card process-card">
+            <div class="card process-card mobile-detail" id="pipelinePanel">
               <div class="card-title"><strong>Generation pipeline</strong><span id="pipelineNote">initial generation</span></div>
               <div class="process-track">
                 <div class="process-node active" data-node="0"><b>Generate</b><small>12 genes × 15 candidates</small></div>
@@ -463,7 +489,7 @@
           </div>
         </section>
 
-        <aside class="inspector">
+        <aside class="inspector mobile-detail" id="inspectorPanel">
           <h3>Selected chromosome <span id="selectedId" style="color:var(--muted);font-family:var(--mono)">C01</span></h3>
           <div class="chromosome" id="chromosome"></div>
           <div class="details">
@@ -484,7 +510,8 @@
       </div>
     </main>
 
-    <section id="method" class="explain">
+    <button class="mobile-page-toggle" type="button" data-mobile-target="method" aria-controls="method" aria-expanded="false">Method and parameters <span class="toggle-mark" aria-hidden="true"></span></button>
+    <section id="method" class="explain mobile-secondary">
       <div>
         <div class="section-kicker">How to read the animation</div>
         <h2>Evolution, with a hard safety gate.</h2>
@@ -509,7 +536,8 @@
       </div>
     </section>
 
-    <section id="outcomes" class="results">
+    <button class="mobile-page-toggle" type="button" data-mobile-target="outcomes" aria-controls="outcomes" aria-expanded="false">Reported optimal designs <span class="toggle-mark" aria-hidden="true"></span></button>
+    <section id="outcomes" class="results mobile-secondary">
       <div class="results-head">
         <div><div class="section-kicker">Reported optima</div><h2>Two objectives, two different cores.</h2></div>
         <p>Because heavy-metal inventory differs between fuel mixtures, maximizing calendar time and maximizing burnup do not lead to the same configuration.</p>
@@ -731,6 +759,12 @@
       $$('[data-operator-step]').forEach(el=>el.classList.toggle('active', +el.dataset.operatorStep===currentStep));
       const statuses=['randomized','all slots passed after replacement loop','parallel simulation','sorted high → low','4 sampled · 2 win','one pair → two children','both children mutating independently','mutated + retested until safe'];
       $('#populationStatus').textContent=statuses[currentStep];
+      const activeCandidate = candidates[selected];
+      const fitnessValues = candidates.filter(c=>c.fit).map(c=>c.fit + generation*6);
+      $('#mobileSummaryStatus').textContent = statuses[currentStep];
+      $('#mobileSummaryCandidate').textContent = `C${String(activeCandidate.id).padStart(2,'0')}`;
+      $('#mobileSummaryFitness').textContent = fitnessValues.length ? Math.round(Math.max(...fitnessValues)) : '—';
+      $('#mobileSummarySafety').textContent = activeCandidate.safe===null ? 'awaiting test' : activeCandidate.safe ? 'passed' : 'needs repair';
       $('#pipelineNote').textContent = generation===0 ? 'initial generation' : `generation ${generation}`;
       $('#mutationValue').textContent = currentStep===7 ? '22.5% repair' : '15%';
       $('#etaValue').textContent = currentStep===7 ? '1.5 repair' : '3';
@@ -752,6 +786,12 @@
       requestAnimationFrame(()=>$('#operatorLab').scrollIntoView({behavior:'smooth',block:'start'}));
     }
     $$('[data-operator-step]').forEach(el=>el.onclick=()=>showOperator(+el.dataset.operatorStep));
+    $$('[data-mobile-target]').forEach(button=>button.onclick=()=>{
+      const panel = document.getElementById(button.dataset.mobileTarget);
+      const isOpen = panel.classList.toggle('mobile-open');
+      button.setAttribute('aria-expanded', String(isOpen));
+      if(isOpen && button.classList.contains('mobile-page-toggle')) requestAnimationFrame(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}));
+    });
     $$('.stage').forEach(el=>el.onclick=()=>{
       pause(); currentStep=+el.dataset.step; updateStateForStep(currentStep); render();
       if(currentStep===5 || currentStep===6) requestAnimationFrame(()=>$('#operatorLab').scrollIntoView({behavior:'smooth',block:'start'}));
